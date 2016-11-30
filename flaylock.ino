@@ -1,25 +1,23 @@
-j/* the tutorial code for 3x4 Matrix Keypad with Arduino is as
-This code prints the key pressed on the keypad to the serial port*/
+//Prototype Keypad Lock
+ 
+#include "Keypad.h"
+#include "Wire.h"
+#include "Servo.h"
+#include "Password.h"
 
-#include <Keypad.h>
-#include <Wire.h>
-#include <Servo.h>
+Password password = Password( "1234" );
+ 
+Servo myservo;  // create servo object to control a servo 
+                // a maximum of eight servo objects can be created 
+ 
+int pos = 0;    // variable to store the servo position 
 
-Servo myservo; // Create Servo Object
-int pos = 0; // Set Servo Position
 char Data[20];
 const byte Rows= 5; //number of rows on the keypad i.e. 4
 const byte Cols= 3; //number of columns on the keypad i,e, 3
 byte data_count = 0, master_count = 0;
 
-char Master[2][7] = {
-  "123456",
-  "000123"
-};
 
-//char * User[Usercount] = {
-//"Master","Andrew","INVALID"};
-  
 //we will define the key map as on the key pad:
 char keymap[Rows][Cols]=
 {
@@ -40,26 +38,42 @@ byte cPins[Cols]= {A2,A1,A0}; //Columns 0 to 2
 
 // command for library forkeypad
 //initializes an instance of the Keypad class
-Keypad kpd= Keypad(makeKeymap(keymap), rPins, cPins, Rows, Cols);
+Keypad keypad= Keypad(makeKeymap(keymap), rPins, cPins, Rows, Cols);
 
 void setup()
 {
-     myservo.attach(9);
      Serial.begin(9600);  // initializing serail monitor
+     myservo.attach(9);  // attaches the servo on pin 9 to the servo object 
+     keypad.addEventListener(keypadEvent); //add an event listener for this keypad
+
 }
 
 //If key is pressed, this key is stored in 'keypressed' variable
 //If key is not equal to 'NO_KEY', then this key is printed out
+
 void loop()
 { 
-    char keypressed = kpd.getKey();
-    if (keypressed != NO_KEY)
-     { 
-          Serial.println(keypressed);
-          Serial.println("Enter Password");
-          Serial.println("Bloop");
+keypad.getKey();
+}
+
+void keypadEvent(KeypadEvent eKey){
+  switch (keypad.getState()){
+    case PRESSED:
+	Serial.print("Pressed: ");
+	Serial.println(eKey);
+	switch (eKey){
+	  case '#': checkPassword(); break;
+	  case '*': password.reset(); break;
+	  default: password.append(eKey);
      }
-     if (keypressed == 'A')   
+  }
+}
+
+
+void checkPassword(){
+  if (password.evaluate()){
+    {
+     Serial.println("Great success!");
      for(pos = 0; pos < 180; pos += 1)  // goes from 0 degrees to 180 degrees 
   {                                  // in steps of 1 degree 
     myservo.write(pos);              // tell servo to go to position in variable 'pos' 
@@ -69,10 +83,10 @@ void loop()
   {                                
     myservo.write(pos);              // tell servo to go to position in variable 'pos' 
     delay(15);                       // waits 15ms for the servo to reach the position 
-  } 
-}
-
-
-// Get rid of this shit after prototyping
-
-
+              }
+  }}else{
+  {
+    Serial.println("Wrong");
+    //add code to run if it did not work
+  }
+}}
